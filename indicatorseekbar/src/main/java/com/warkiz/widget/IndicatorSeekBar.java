@@ -645,7 +645,7 @@ public class IndicatorSeekBar extends View {
                 mStockPaint.setColor(mThumbColor);
             }
 
-            float radius = mIsTouching ? mThumbTouchRadius : mThumbRadius;
+            float radius = (mIsTouching ? mThumbTouchRadius : mThumbRadius) - mThumbBorderSize;
 
             canvas.drawCircle(thumbCenterX, mProgressTrack.top, radius, mStockPaint);
 
