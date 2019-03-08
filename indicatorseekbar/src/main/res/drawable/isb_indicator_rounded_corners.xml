@@ -6,6 +6,6 @@
     android:width="28dp"
     android:height="16dp" />
 
-    <corners android:radius="8dp" />
+    <corners android:radius="@dimen/isb_indicator_rounded_corners_radius" />
 
 </shape>
