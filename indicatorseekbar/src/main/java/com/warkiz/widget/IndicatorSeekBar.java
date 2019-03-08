@@ -48,6 +48,7 @@ public class IndicatorSeekBar extends View {
     private static final String FORMAT_TICK_TEXT = "${TICK_TEXT}";
     private Context mContext;
     private Paint mStockPaint;//the paint for seek bar drawing
+    private Paint mBorderPaint;
     private TextPaint mTextPaint;//the paint for mTickTextsArr drawing
     private OnSeekChangeListener mSeekChangeListener;
     private Rect mRect;
@@ -128,10 +129,13 @@ public class IndicatorSeekBar extends View {
     private float mThumbTouchRadius;//the thumb's radius when touching
     private Bitmap mThumbBitmap;//the drawable bitmap for thumb
     private int mThumbColor;
+    private int mThumbBorderColor;
     private int mThumbSize;
+    private int mThumbBorderSize;
     private Drawable mThumbDrawable;
     private Bitmap mPressedThumbBitmap;//the bitmap for pressing status
     private int mPressedThumbColor;//the color for pressing status
+    private int mPressedThumbBorderColor;//the color for pressing status
     //thumb text
     private boolean mShowThumbText;//the place where the thumb text show .
     private float mThumbTextY;//the thumb text's drawing Y anchor
@@ -202,9 +206,11 @@ public class IndicatorSeekBar extends View {
         mTrackRoundedCorners = ta.getBoolean(R.styleable.IndicatorSeekBar_isb_track_rounded_corners, builder.trackRoundedCorners);
         //thumb
         mThumbSize = ta.getDimensionPixelSize(R.styleable.IndicatorSeekBar_isb_thumb_size, builder.thumbSize);
+        mThumbBorderSize = ta.getDimensionPixelSize(R.styleable.IndicatorSeekBar_isb_thumb_border_size, builder.thumbBorderSize);
         mThumbDrawable = ta.getDrawable(R.styleable.IndicatorSeekBar_isb_thumb_drawable);
         mAdjustAuto = ta.getBoolean(R.styleable.IndicatorSeekBar_isb_thumb_adjust_auto, true);
         initThumbColor(ta.getColorStateList(R.styleable.IndicatorSeekBar_isb_thumb_color), builder.thumbColor);
+        initThumbBorderColor(ta.getColorStateList(R.styleable.IndicatorSeekBar_isb_thumb_border_color), builder.thumbBorderColor);
         //thumb text
         mShowThumbText = ta.getBoolean(R.styleable.IndicatorSeekBar_isb_show_thumb_text, builder.showThumbText);
         mThumbTextColor = ta.getColor(R.styleable.IndicatorSeekBar_isb_thumb_text_color, builder.thumbTextColor);
@@ -323,6 +329,17 @@ public class IndicatorSeekBar extends View {
         mStockPaint.setAntiAlias(true);
         if (mBackgroundTrackSize > mProgressTrackSize) {
             mProgressTrackSize = mBackgroundTrackSize;
+        }
+
+        if (mThumbBorderSize > 0) {
+            if (mBorderPaint == null) {
+                mBorderPaint = new Paint();
+            }
+
+            mBorderPaint.setAntiAlias(true);
+            mBorderPaint.setStrokeWidth(mThumbBorderSize);
+            mBorderPaint.setStyle(Paint.Style.STROKE);
+            mBorderPaint.setStrokeCap(Paint.Cap.ROUND);
         }
     }
 
@@ -627,7 +644,20 @@ public class IndicatorSeekBar extends View {
             } else {
                 mStockPaint.setColor(mThumbColor);
             }
-            canvas.drawCircle(thumbCenterX, mProgressTrack.top, mIsTouching ? mThumbTouchRadius : mThumbRadius, mStockPaint);
+
+            float radius = mIsTouching ? mThumbTouchRadius : mThumbRadius;
+
+            canvas.drawCircle(thumbCenterX, mProgressTrack.top, radius, mStockPaint);
+
+            if (mThumbBorderSize > 0) {
+                if (mIsTouching) {
+                    mBorderPaint.setColor(mPressedThumbBorderColor);
+                } else {
+                    mBorderPaint.setColor(mThumbBorderColor);
+                }
+                canvas.drawCircle(thumbCenterX, mProgressTrack.top, radius, mBorderPaint);
+            }
+
         }
     }
 
@@ -748,6 +778,68 @@ public class IndicatorSeekBar extends View {
     }
 
     /**
+     * @return Array where index 0 = normal state, index 1 = pressed state
+     */
+
+    private static int[] getColorsArray(ColorStateList colorStateList, int defaultColor) {
+        int normalColor = defaultColor;
+        int pressedColor = defaultColor;
+
+        //if you didn't set the thumb color, set a default color.
+        if (colorStateList == null) {
+            normalColor = defaultColor;
+            pressedColor = normalColor;
+            return new int[]{normalColor, pressedColor};
+        }
+        int[][] states = null;
+        int[] colors = null;
+        Class<? extends ColorStateList> aClass = colorStateList.getClass();
+        try {
+            Field[] f = aClass.getDeclaredFields();
+            for (Field field : f) {
+                field.setAccessible(true);
+                if ("mStateSpecs".equals(field.getName())) {
+                    states = (int[][]) field.get(colorStateList);
+                }
+                if ("mColors".equals(field.getName())) {
+                    colors = (int[]) field.get(colorStateList);
+                }
+            }
+            if (states == null || colors == null) {
+                return new int[]{normalColor, pressedColor};
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Something wrong happened when parseing thumb selector color.");
+        }
+        if (states.length == 1) {
+            normalColor = colors[0];
+            pressedColor = normalColor;
+        } else if (states.length == 2) {
+            for (int i = 0; i < states.length; i++) {
+                int[] attr = states[i];
+                if (attr.length == 0) {//didn't have state,so just get color.
+                    pressedColor = colors[i];
+                    continue;
+                }
+                switch (attr[0]) {
+                    case android.R.attr.state_pressed:
+                        normalColor = colors[i];
+                        break;
+                    default:
+                        //the color selector file was set by a wrong format , please see above to correct.
+                        throw new IllegalArgumentException("the selector color file you set for the argument: isb_thumb_color is in wrong format.");
+                }
+            }
+        } else {
+            //the color selector file was set by a wrong format , please see above to correct.
+            throw new IllegalArgumentException("the selector color file you set for the argument: isb_thumb_color is in wrong format.");
+        }
+
+        return new int[]{normalColor, pressedColor};
+
+    }
+
+    /*
      * initial the color for the thumb.
      * <p>
      * <p>
@@ -769,56 +861,15 @@ public class IndicatorSeekBar extends View {
      * (3) if the states.length == other, the color's format you set is not support.
      */
     private void initThumbColor(ColorStateList colorStateList, int defaultColor) {
-        //if you didn't set the thumb color, set a default color.
-        if (colorStateList == null) {
-            mThumbColor = defaultColor;
-            mPressedThumbColor = mThumbColor;
-            return;
-        }
-        int[][] states = null;
-        int[] colors = null;
-        Class<? extends ColorStateList> aClass = colorStateList.getClass();
-        try {
-            Field[] f = aClass.getDeclaredFields();
-            for (Field field : f) {
-                field.setAccessible(true);
-                if ("mStateSpecs".equals(field.getName())) {
-                    states = (int[][]) field.get(colorStateList);
-                }
-                if ("mColors".equals(field.getName())) {
-                    colors = (int[]) field.get(colorStateList);
-                }
-            }
-            if (states == null || colors == null) {
-                return;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Something wrong happened when parseing thumb selector color.");
-        }
-        if (states.length == 1) {
-            mThumbColor = colors[0];
-            mPressedThumbColor = mThumbColor;
-        } else if (states.length == 2) {
-            for (int i = 0; i < states.length; i++) {
-                int[] attr = states[i];
-                if (attr.length == 0) {//didn't have state,so just get color.
-                    mPressedThumbColor = colors[i];
-                    continue;
-                }
-                switch (attr[0]) {
-                    case android.R.attr.state_pressed:
-                        mThumbColor = colors[i];
-                        break;
-                    default:
-                        //the color selector file was set by a wrong format , please see above to correct.
-                        throw new IllegalArgumentException("the selector color file you set for the argument: isb_thumb_color is in wrong format.");
-                }
-            }
-        } else {
-            //the color selector file was set by a wrong format , please see above to correct.
-            throw new IllegalArgumentException("the selector color file you set for the argument: isb_thumb_color is in wrong format.");
-        }
+        int[] colorsArray = getColorsArray(colorStateList, defaultColor);
+        mThumbColor = colorsArray[0];
+        mPressedThumbColor = colorsArray[1];
+    }
 
+    private void initThumbBorderColor(ColorStateList colorStateList, int defaultColor) {
+        int[] colorsArray = getColorsArray(colorStateList, defaultColor);
+        mThumbBorderColor = colorsArray[0];
+        mPressedThumbBorderColor = colorsArray[1];
     }
 
     /**
@@ -1489,9 +1540,11 @@ public class IndicatorSeekBar extends View {
         this.mTrackRoundedCorners = builder.trackRoundedCorners;
         //thumb
         this.mThumbSize = builder.thumbSize;
+        this.mThumbBorderSize = builder.thumbBorderSize;
         this.mThumbDrawable = builder.thumbDrawable;
         this.mThumbTextColor = builder.thumbTextColor;
         initThumbColor(builder.thumbColorStateList, builder.thumbColor);
+        initThumbBorderColor(builder.thumbBorderColorStateList, builder.thumbBorderColor);
         this.mShowThumbText = builder.showThumbText;
         //tickMarks
         this.mShowTickMarksType = builder.showTickMarksType;
@@ -1749,6 +1802,22 @@ public class IndicatorSeekBar extends View {
     //</selector>
     public void thumbColorStateList(@NonNull ColorStateList thumbColorStateList) {
         initThumbColor(thumbColorStateList, mThumbColor);
+        invalidate();
+    }
+
+    /**
+     * set the seek bar's thumb's border selector color.
+     *
+     * @param thumbBorderColorStateList color selector
+     *                                  selector format like:
+     */
+    //<?xml version="1.0" encoding="utf-8"?>
+    //<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    //<item android:color="@color/colorAccent" android:state_pressed="true" />  <!--this color is for thumb which is at pressing status-->
+    //<item android:color="@color/color_blue" />                                <!--for thumb which is at normal status-->
+    //</selector>
+    public void thumbBorderColorStateList(@NonNull ColorStateList thumbBorderColorStateList) {
+        initThumbBorderColor(thumbBorderColorStateList, mThumbBorderColor);
         invalidate();
     }
 

@@ -48,8 +48,12 @@ public class Builder {
     boolean showThumbText = false;
     //thumb
     int thumbSize = 0;
+    int thumbBorderSize = 0;
     int thumbColor = Color.parseColor("#FF4081");
     ColorStateList thumbColorStateList = null;
+
+    int thumbBorderColor= Color.parseColor("#FF4081");
+    ColorStateList thumbBorderColorStateList = null;
     Drawable thumbDrawable = null;
     //tickTexts
     boolean showTickText;
@@ -76,6 +80,7 @@ public class Builder {
         this.tickMarksSize = SizeUtils.dp2px(context, 10);
         this.tickTextsSize = SizeUtils.sp2px(context, 13);
         this.thumbSize = SizeUtils.dp2px(context, 14);
+        this.thumbBorderSize = SizeUtils.dp2px(context, 0);
     }
 
     /**
@@ -236,6 +241,17 @@ public class Builder {
     }
 
     /**
+     * change the font path for indicator text.have no influence on custom indicator.
+     *
+     * @param indicatorFontPath The scaled pixel size.
+     * @return Builder
+     */
+    public Builder indicatorFontPath(String indicatorFontPath) {
+        this.indicatorFontPath = indicatorFontPath;
+        return this;
+    }
+
+    /**
      * set the seek bar's indicator's custom indicator view. only effect on custom indicator type.
      *
      * @param indicatorContentView the custom indicator view
@@ -371,6 +387,17 @@ public class Builder {
     }
 
     /**
+     * set the seek bar's thumb's border color.
+     *
+     * @param thumbBorderColor colorInt
+     * @return Builder
+     */
+    public Builder thumbBorderColor(@ColorInt int thumbBorderColor) {
+        this.thumbBorderColor = thumbBorderColor;
+        return this;
+    }
+
+    /**
      * set the seek bar's thumb's selector color.
      *
      * @param thumbColorStateList color selector
@@ -388,6 +415,23 @@ public class Builder {
     }
 
     /**
+     * set the seek bar's thumb's border selector color.
+     *
+     * @param thumbBorderColorStateList color selector
+     * @return Builder
+     * selector format like:
+     */
+    //<?xml version="1.0" encoding="utf-8"?>
+    //<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    //<item android:color="@color/colorAccent" android:state_pressed="true" />  <!--this color is for thumb which is at pressing status-->
+    //<item android:color="@color/color_blue" />                                <!--for thumb which is at normal status-->
+    //</selector>
+    public Builder thumbBorderColorStateList(@NonNull ColorStateList thumbBorderColorStateList) {
+        this.thumbBorderColorStateList = thumbBorderColorStateList;
+        return this;
+    }
+
+    /**
      * set the seek bar's thumb's Width.will be limited in 30dp.
      *
      * @param thumbSize The dp size.
@@ -395,6 +439,18 @@ public class Builder {
      */
     public Builder thumbSize(int thumbSize) {
         this.thumbSize = SizeUtils.dp2px(context, thumbSize);
+        return this;
+    }
+
+
+    /**
+     * set the seek bar's thumb's Width.will be limited in 30dp.
+     *
+     * @param thumbBorderSize The dp size.
+     * @return Builder
+     */
+    public Builder thumbBorderSize(int thumbBorderSize) {
+        this.thumbBorderSize = SizeUtils.dp2px(context, thumbBorderSize);
         return this;
     }
 
