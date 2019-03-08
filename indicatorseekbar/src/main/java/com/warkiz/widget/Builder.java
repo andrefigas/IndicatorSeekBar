@@ -34,6 +34,7 @@ public class Builder {
     int indicatorColor = Color.parseColor("#FF4081");
     int indicatorTextColor = Color.parseColor("#FFFFFF");
     int indicatorTextSize = 0;
+    String indicatorFontPath = "";
     View indicatorContentView = null;
     View indicatorTopContentView = null;
     //track

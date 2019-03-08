@@ -1,6 +1,7 @@
 package com.warkiz.widget;
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -33,6 +34,7 @@ public class Indicator {
     private View mIndicatorCustomView;
     private View mIndicatorCustomTopContentView;
     private float mIndicatorTextSize;
+    private final String mIndicatorFontPath;
     private int mIndicatorTextColor;
 
     public Indicator(Context context,
@@ -40,6 +42,7 @@ public class Indicator {
                      int indicatorColor,
                      int indicatorType,
                      int indicatorTextSize,
+                     String indicatorFontPath,
                      int indicatorTextColor,
                      View indicatorCustomView,
                      View indicatorCustomTopContentView) {
@@ -50,6 +53,7 @@ public class Indicator {
         this.mIndicatorCustomView = indicatorCustomView;
         this.mIndicatorCustomTopContentView = indicatorCustomTopContentView;
         this.mIndicatorTextSize = indicatorTextSize;
+        this.mIndicatorFontPath = indicatorFontPath;
         this.mIndicatorTextColor = indicatorTextColor;
 
         mWindowWidth = getWindowWidth();
@@ -96,6 +100,11 @@ public class Indicator {
                 mProgressTextView = (TextView) mIndicatorView.findViewById(R.id.isb_progress);
                 mProgressTextView.setText(mSeekBar.getIndicatorTextString());
                 mProgressTextView.setTextSize(SizeUtils.px2sp(mContext, mIndicatorTextSize));
+                if (mIndicatorFontPath != null && !mIndicatorFontPath.isEmpty()) {
+                    mProgressTextView.setTypeface(
+                            Typeface.createFromAsset(mContext.getAssets(), mIndicatorFontPath)
+                    );
+                }
                 mProgressTextView.setTextColor(mIndicatorTextColor);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                     mTopContentView.setBackground(getGradientDrawable());

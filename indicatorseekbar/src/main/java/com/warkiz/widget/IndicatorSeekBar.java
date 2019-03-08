@@ -95,6 +95,7 @@ public class IndicatorSeekBar extends View {
     private int mIndicatorTextColor;
     private boolean mIndicatorStayAlways;//true if the indicator didn't dismiss after initial.
     private int mIndicatorTextSize;
+    private String mIndicatorFontPath;
     private View mIndicatorContentView;//the view to replace the raw indicator all view
     private View mIndicatorTopContentView;//the view to replace the raw indicator content view
     private int mShowIndicatorType;//different indicator type.
@@ -225,6 +226,9 @@ public class IndicatorSeekBar extends View {
         mShowIndicatorType = ta.getInt(R.styleable.IndicatorSeekBar_isb_show_indicator, builder.showIndicatorType);
         mIndicatorColor = ta.getColor(R.styleable.IndicatorSeekBar_isb_indicator_color, builder.indicatorColor);
         mIndicatorTextSize = ta.getDimensionPixelSize(R.styleable.IndicatorSeekBar_isb_indicator_text_size, builder.indicatorTextSize);
+        mIndicatorFontPath = ta.getString(R.styleable.IndicatorSeekBar_isb_indicator_font_path);
+        if (mIndicatorFontPath == null) mIndicatorFontPath = builder.indicatorFontPath;
+
         mIndicatorTextColor = ta.getColor(R.styleable.IndicatorSeekBar_isb_indicator_text_color, builder.indicatorTextColor);
         int indicatorContentViewId = ta.getResourceId(R.styleable.IndicatorSeekBar_isb_indicator_content_layout, 0);
         if (indicatorContentViewId > 0) {
@@ -1323,6 +1327,7 @@ public class IndicatorSeekBar extends View {
                     mIndicatorColor,
                     mShowIndicatorType,
                     mIndicatorTextSize,
+                    mIndicatorFontPath,
                     mIndicatorTextColor,
                     mIndicatorContentView,
                     mIndicatorTopContentView);
